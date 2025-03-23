@@ -1,0 +1,20 @@
+# Main dependencies for the project
+fastapi
+torch
+transformers
+numpy
+langchain_huggingface
+huggingface_hub
+langchain
+langchain_community
+langchain_chroma
+faiss-cpu
+sentence_transformers
+jupyter
+jupyterlab
+pypdf
+ipykernel
+
+# Optional dependencies for specific features
+dotenv
+pysqlite3-binary
