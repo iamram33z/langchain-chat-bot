@@ -14,6 +14,8 @@ jupyter
 jupyterlab
 pypdf
 ipykernel
+fastapi
+uvicorn
 
 # Optional dependencies for specific features
 dotenv
