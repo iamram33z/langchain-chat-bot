@@ -16,6 +16,9 @@ pypdf
 ipykernel
 fastapi
 uvicorn
+jinja2
+aiohttp
+python-multipart
 
 # Optional dependencies for specific features
 dotenv
