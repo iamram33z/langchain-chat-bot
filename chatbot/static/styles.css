@@ -1,8 +1,0 @@
-body {
-    font-family: Arial, sans-serif;
-}
-#chatbox {
-    min-height: 300px;
-    max-height: 400px;
-    overflow-y: auto;
-}

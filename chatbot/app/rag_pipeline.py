@@ -4,118 +4,137 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from huggingface_hub import InferenceClient
+import time
+from typing import Optional
+import requests
 
 # Load environment variables
 load_dotenv()
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
-# Debugging: Check if the Hugging Face API key is loaded correctly
-print("HUGGINGFACE_API_KEY:", HUGGINGFACE_API_KEY)
+# Constants - Updated to use more reliable models
+PDF_PATH = os.path.join(os.getcwd(), "chatbot", "data", "codeprolk.pdf")
+LLM_MODEL = "mistralai/Mistral-7B-Instruct-v0.1"  # More available alternative
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # Faster local embeddings
+MAX_RETRIES = 3
+TIMEOUT = 30
 
-# Constants
-PDF_PATH = os.path.join(os.getcwd(), "chatbot/data/codeprolk.pdf")
-LLM_MODEL = "meta-llama/Llama-3.2-1B"
-EMBEDDING_MODEL = "sentence-transformers/all-mpnet-base-v2"
-
-# Ensure the PDF file exists
-if not os.path.exists(PDF_PATH):
-    raise FileNotFoundError(f"PDF file not found at {PDF_PATH}")
-print("PDF_PATH:", PDF_PATH)  # Debugging line to check if the PDF path is correct
-
-# Initialize Embeddings using HuggingFaceEmbeddings
-embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
-
-def load_and_preprocess_pdf(pdf_path):
-    """
-    Loads the PDF, splits the text into chunks, and initializes FAISS vector store.
-    
-    Args:
-        pdf_path (str): Path to the PDF file.
+class RAGPipeline:
+    def __init__(self):
+        self.initialize_components()
         
-    Returns:
-        FAISS vector store retriever.
-    """
-    # Load PDF
-    loader = PyPDFLoader(pdf_path)
-    documents = loader.load()
-
-    # Split text into smaller chunks for better retrieval
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=50)
-    chunks = text_splitter.split_documents(documents)
-
-    # Create FAISS vector store for document retrieval
-    vectorstore = FAISS.from_documents(chunks, embedding=embeddings)
-    return vectorstore.as_retriever()
-
-# Load the retriever from preprocessed PDF
-retriever = load_and_preprocess_pdf(PDF_PATH)
-
-# Initialize Hugging Face LLM Client
-llm_client = InferenceClient(model=LLM_MODEL, token=HUGGINGFACE_API_KEY)
-
-# Define Prompt Template
-prompt_template = """
-You are a helpful assistant. Answer the question based on the provided context.
-
-Question: {question}
-
-Context: {context}
-
-Answer:
-"""
-prompt = ChatPromptTemplate.from_template(prompt_template)
-
-def retrieve_context(question: str):
-    """
-    Retrieves relevant context from the vector store based on the question.
-    
-    Args:
-        question (str): The user's question.
+    def initialize_components(self):
+        """Initialize all components with error handling"""
+        print("Initializing RAG pipeline...")
+        start = time.time()
         
-    Returns:
-        str: The relevant context to provide to the LLM.
-    """
-    documents = retriever.invoke(question)
-    context = "\n\n".join([doc.page_content for doc in documents])
-    return context
-
-def query_llm(input_dict: dict):
-    """
-    Calls Hugging Face Inference API with extracted question and context.
+        try:
+            # 1. Load and process PDF
+            self.load_pdf()
+            
+            # 2. Initialize embeddings and vector store
+            self.initialize_embeddings()
+            
+            # 3. Initialize LLM client
+            self.llm_client = InferenceClient(
+                model=LLM_MODEL,
+                token=HUGGINGFACE_API_KEY,
+                timeout=TIMEOUT
+            )
+            
+            print(f"Initialization completed in {time.time() - start:.2f}s")
+            
+        except Exception as e:
+            raise RuntimeError(f"Initialization failed: {str(e)}")
     
-    Args:
-        input_dict (dict): Dictionary containing the question and context.
+    def load_pdf(self):
+        """Load and process PDF document"""
+        print("Loading PDF...")
+        loader = PyPDFLoader(PDF_PATH)
+        self.documents = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=400,
+            chunk_overlap=50
+        )
+        self.chunks = text_splitter.split_documents(self.documents)
+        print(f"Loaded {len(self.chunks)} chunks from PDF")
+    
+    def initialize_embeddings(self):
+        """Initialize embeddings and vector store"""
+        print("Initializing embeddings...")
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name=EMBEDDING_MODEL,
+            model_kwargs={"device": "cpu"}
+        )
+        self.vectorstore = FAISS.from_documents(self.chunks, self.embeddings)
+        self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 3})
+    
+    def get_response(self, question: str) -> str:
+        """Main method to get RAG response with retries"""
+        for attempt in range(MAX_RETRIES):
+            try:
+                # 1. Retrieve context
+                context = self.retrieve_context(question)
+                
+                # 2. Generate response
+                return self.generate_response(question, context)
+                
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 503:
+                    wait = 2 ** attempt  # Exponential backoff
+                    print(f"Service unavailable, retrying in {wait}s...")
+                    time.sleep(wait)
+                    continue
+                raise
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed: {str(e)}")
+                if attempt == MAX_RETRIES - 1:
+                    return self.get_fallback_response(question)
+                time.sleep(1)
+    
+    def retrieve_context(self, question: str) -> str:
+        """Retrieve relevant context from vector store"""
+        docs = self.retriever.invoke(question)
+        return "\n\n".join(doc.page_content for doc in docs)
+    
+    def generate_response(self, question: str, context: str) -> str:
+        """Generate response from LLM with proper formatting"""
+        prompt = f"""Answer the question based on the context below.
         
-    Returns:
-        str: The response from the LLM.
-    """
-    question = input_dict["question"]
-    context = input_dict["context"]
-    
-    # Render the prompt into a string
-    prompt_string = prompt_template.format(question=question, context=context)
-    
-    # Call Hugging Face Inference API
-    response = llm_client.text_generation(prompt_string, max_new_tokens=200)
-    return response
-
-# Define the RAG pipeline
-rag_chain = (
-    {"context": RunnableLambda(retrieve_context), "question": RunnablePassthrough()}
-    | RunnableLambda(query_llm)
-)
-
-def get_rag_response(question: str):
-    """
-    Executes the RAG pipeline with a user question.
-    
-    Args:
-        question (str): The question asked by the user.
+        Context: {context}
         
-    Returns:
-        str: The answer generated by the RAG pipeline.
-    """
-    return rag_chain.invoke(question)
+        Question: {question}
+        
+        Provide a concise answer:"""
+        
+        response = self.llm_client.text_generation(
+            prompt,
+            max_new_tokens=150,
+            temperature=0.7,
+            do_sample=True
+        )
+        
+        # Handle different response formats
+        if isinstance(response, str):
+            return response.strip()
+        elif hasattr(response, "generated_text"):
+            return response.generated_text.strip()
+        return str(response).strip()
+    
+    def get_fallback_response(self, question: str) -> str:
+        """Fallback when all retries fail"""
+        try:
+            docs = self.retriever.invoke(question)
+            if docs:
+                return f"Here's relevant info: {docs[0].page_content[:300]}..."
+        except:
+            pass
+        return "I'm having trouble answering right now. Please try again later."
+
+# Initialize pipeline globally
+rag_pipeline = RAGPipeline()
+
+def get_rag_response(question: str) -> str:
+    """Public interface to get RAG response"""
+    return rag_pipeline.get_response(question)

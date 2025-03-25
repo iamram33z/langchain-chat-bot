@@ -2,7 +2,6 @@
 fastapi
 torch
 transformers
-numpy
 langchain_huggingface
 huggingface_hub
 langchain
@@ -22,4 +21,4 @@ python-multipart
 
 # Optional dependencies for specific features
 dotenv
-pysqlite3-binary
+#pysqlite3-binary

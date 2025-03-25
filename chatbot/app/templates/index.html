@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Interface</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="chat-container">
+            <div class="chat-header d-flex align-items-center">
+                <div class="avatar me-3">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0">Chatbot Assistant</h6>
+                    <span class="status online">Online</span>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                {% for message in chat_history %}
+                    <div class="message user-message">
+                        <span class="message-sender">You</span>
+                        <div class="message-content">
+                            {{ message.user }}
+                        </div>
+                        <span class="message-time">{{ message.time }}</span>
+                    </div>
+                    <div class="message bot-message">
+                        <span class="message-sender">Assistant</span>
+                        <div class="message-content">
+                            {{ message.bot }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="chat-input d-flex">
+                <form method="post" action="/ask" class="w-100 d-flex">
+                    <input type="text" name="question" class="form-control flex-grow-1" placeholder="Type your message..." required>
+                    <button type="submit" class="btn btn-send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="debug">
+        <h3>Debug Information:</h3>
+        <p id="css-status">CSS: Loading...</p>
+        <p id="api-status">API: Not tested</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const bodyColor = window.getComputedStyle(document.body).backgroundColor;
+                document.getElementById('css-status').textContent = 
+                    `CSS: ${bodyColor === 'rgb(26, 26, 26)' ? 'Not loaded' : 'Loaded'}`;
+                
+                fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'question=test'
+                })
+                .then(response => {
+                    document.getElementById('api-status').textContent = 
+                        `API: ${response.ok ? 'Working' : 'Error ' + response.status}`;
+                })
+                .catch(err => {
+                    document.getElementById('api-status').textContent = 'API: Connection failed';
+                });
+                
+                // Auto-scroll to bottom of chat
+                const chatMessages = document.getElementById('chat-messages');
+                if (chatMessages) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>
