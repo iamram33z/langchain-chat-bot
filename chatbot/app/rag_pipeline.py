@@ -23,6 +23,11 @@ TIMEOUT = 30
 
 class RAGPipeline:
     def __init__(self):
+        self.retriever = None
+        self.vectorstore = None
+        self.embeddings = None
+        self.chunks = None
+        self.documents = None
         self.llm_client = None
         self.initialize_components()
         
