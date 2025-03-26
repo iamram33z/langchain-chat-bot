@@ -15,13 +15,15 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 # Constants - Updated to use more reliable models
 PDF_PATH = os.path.join(os.getcwd(), "chatbot", "data", "codeprolk.pdf")
-LLM_MODEL = "mistralai/Mistral-7B-Instruct-v0.1"  # More available alternative
+#LLM_MODEL = "mistralai/Mistral-7B-Instruct-v0.1"  # More available alternative
+LLM_MODEL = "meta-llama/Llama-3.2-1B"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # Faster local embeddings
 MAX_RETRIES = 3
 TIMEOUT = 30
 
 class RAGPipeline:
     def __init__(self):
+        self.llm_client = None
         self.initialize_components()
         
     def initialize_components(self):
@@ -110,8 +112,8 @@ class RAGPipeline:
         
         response = self.llm_client.text_generation(
             prompt,
-            max_new_tokens=150,
-            temperature=0.7,
+            max_new_tokens=250,
+            temperature=0.5,
             do_sample=True
         )
         

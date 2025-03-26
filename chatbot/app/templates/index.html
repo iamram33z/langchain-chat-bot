@@ -6,6 +6,7 @@
     <title>AI Assistant | Professional Chat Interface</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="/static/chatbot.ico">
 </head>
 <body>
 <div class="main-container">
@@ -13,7 +14,9 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
-                    <i class="fas fa-robot logo-icon"></i>
+                    <div class="logo-circle">
+                        <i class="fas fa-robot logo-icon"></i>
+                    </div>
                     <span class="logo-text">AI Assistant</span>
                 </div>
                 <div class="status-indicator">
@@ -31,16 +34,18 @@
                 </div>
                 <div class="user-info">
                     <span class="username">User</span>
-                    <span class="user-email">user@example.com</span>
                 </div>
             </div>
         </div>
 
         <div class="chat-container">
+            <div class="background-logo">
+                <i class="fas fa-robot"></i>
+            </div>
             <div class="chat-header">
                 <div class="chat-title-container">
                     <h2>AI Assistant</h2>
-                    <div class="typing-indicator" id="typing-indicator">
+                    <div class="typing-indicator" id="typing-indicator" style="display: none;">
                         <span>AI is typing</span>
                         <div class="typing-dots">
                             <span></span>
@@ -48,11 +53,6 @@
                             <span></span>
                         </div>
                     </div>
-                </div>
-                <div class="chat-actions">
-                    <button class="icon-button">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
                 </div>
             </div>
 
@@ -85,32 +85,13 @@
                         <div class="message-content">
                             {{ message.bot }}
                         </div>
-                        <div class="message-actions">
-                            <button class="action-button">
-                                <i class="fas fa-thumbs-up"></i>
-                            </button>
-                            <button class="action-button">
-                                <i class="fas fa-thumbs-down"></i>
-                            </button>
-                            <button class="action-button">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
 
             <div class="chat-input-container">
-                <form method="post" action="/ask" class="message-form">
-                    <div class="input-toolbar">
-                        <button type="button" class="toolbar-button">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                        <button type="button" class="toolbar-button">
-                            <i class="fas fa-paperclip"></i>
-                        </button>
-                    </div>
+                <form method="post" action="/ask" class="message-form" id="chat-form">
                     <input type="text" name="question" class="message-input" placeholder="Type your message..."
                            required>
                     <button type="submit" class="send-button">
@@ -125,66 +106,23 @@
     </div>
 </div>
 
-<div class="debug-container" id="debug">
-    <div class="debug-header">
-        <h3>System Status</h3>
-        <button class="debug-toggle" id="debug-toggle">
-            <i class="fas fa-chevron-up"></i>
-        </button>
-    </div>
-    <div class="debug-content">
-        <div class="status-item">
-            <span class="status-label">CSS Status:</span>
-            <span class="status-value" id="css-status">Loading...</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">API Status:</span>
-            <span class="status-value" id="api-status">Not tested</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">Connection:</span>
-            <span class="status-value">WebSocket Active</span>
-        </div>
-    </div>
-</div>
-
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            const bodyColor = window.getComputedStyle(document.body).backgroundColor;
-            document.getElementById('css-status').textContent =
-                    bodyColor === 'rgb(18, 18, 18)' ? 'Not loaded' : 'Loaded successfully';
+        // Auto-scroll to bottom of chat
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
 
-            fetch('/ask', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'question=test'
-            })
-                    .then(response => {
-                        document.getElementById('api-status').textContent =
-                                response.ok ? 'Operational' : `Error ${response.status}`;
-                    })
-                    .catch(err => {
-                        document.getElementById('api-status').textContent = 'Connection failed';
-                    });
+        // Handle form submission to show typing indicator
+        const chatForm = document.getElementById('chat-form');
+        const typingIndicator = document.getElementById('typing-indicator');
 
-            // Auto-scroll to bottom of chat
-            const chatMessages = document.getElementById('chat-messages');
-            if (chatMessages) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-
-            // Debug panel toggle
-            const debugToggle = document.getElementById('debug-toggle');
-            const debugPanel = document.getElementById('debug');
-            debugToggle.addEventListener('click', () => {
-                debugPanel.classList.toggle('collapsed');
-                debugToggle.querySelector('i').classList.toggle('fa-chevron-up');
-                debugToggle.querySelector('i').classList.toggle('fa-chevron-down');
+        if (chatForm) {
+            chatForm.addEventListener('submit', () => {
+                typingIndicator.style.display = 'flex';
             });
-        }, 500);
+        }
     });
 </script>
 </body>
