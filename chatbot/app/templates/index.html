@@ -3,87 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Interface</title>
+    <title>AI Assistant | Professional Chat Interface</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <div class="chat-container">
-            <div class="chat-header d-flex align-items-center">
-                <div class="avatar me-3">
-                    <i class="fas fa-robot"></i>
+<div class="main-container">
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <i class="fas fa-robot logo-icon"></i>
+                    <span class="logo-text">AI Assistant</span>
                 </div>
-                <div>
-                    <h6 class="mb-0">Chatbot Assistant</h6>
-                    <span class="status online">Online</span>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Online</span>
                 </div>
             </div>
-            
+            <div class="conversation-history">
+                <div class="section-title">Recent Chats</div>
+                <!-- Would be populated with conversation history -->
+            </div>
+            <div class="user-profile">
+                <div class="avatar-small">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <span class="username">User</span>
+                    <span class="user-email">user@example.com</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="chat-title-container">
+                    <h2>AI Assistant</h2>
+                    <div class="typing-indicator" id="typing-indicator">
+                        <span>AI is typing</span>
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="icon-button">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+
             <div class="chat-messages" id="chat-messages">
                 {% for message in chat_history %}
-                    <div class="message user-message">
-                        <span class="message-sender">You</span>
+                <div class="message-container user-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="message-content-container">
+                        <div class="message-info">
+                            <span class="message-sender">You</span>
+                            <span class="message-time">{{ message.time }}</span>
+                        </div>
                         <div class="message-content">
                             {{ message.user }}
                         </div>
-                        <span class="message-time">{{ message.time }}</span>
                     </div>
-                    <div class="message bot-message">
-                        <span class="message-sender">Assistant</span>
+                </div>
+
+                <div class="message-container bot-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content-container">
+                        <div class="message-info">
+                            <span class="message-sender">Assistant</span>
+                            <span class="message-time">{{ message.time }}</span>
+                        </div>
                         <div class="message-content">
                             {{ message.bot }}
                         </div>
+                        <div class="message-actions">
+                            <button class="action-button">
+                                <i class="fas fa-thumbs-up"></i>
+                            </button>
+                            <button class="action-button">
+                                <i class="fas fa-thumbs-down"></i>
+                            </button>
+                            <button class="action-button">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
                     </div>
+                </div>
                 {% endfor %}
             </div>
-            
-            <div class="chat-input d-flex">
-                <form method="post" action="/ask" class="w-100 d-flex">
-                    <input type="text" name="question" class="form-control flex-grow-1" placeholder="Type your message..." required>
-                    <button type="submit" class="btn btn-send">
+
+            <div class="chat-input-container">
+                <form method="post" action="/ask" class="message-form">
+                    <div class="input-toolbar">
+                        <button type="button" class="toolbar-button">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button type="button" class="toolbar-button">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                    </div>
+                    <input type="text" name="question" class="message-input" placeholder="Type your message..."
+                           required>
+                    <button type="submit" class="send-button">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
+                <div class="input-footer">
+                    <span class="disclaimer-text">AI Assistant may produce inaccurate information. Consider verifying important details.</span>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div id="debug">
-        <h3>Debug Information:</h3>
-        <p id="css-status">CSS: Loading...</p>
-        <p id="api-status">API: Not tested</p>
+<div class="debug-container" id="debug">
+    <div class="debug-header">
+        <h3>System Status</h3>
+        <button class="debug-toggle" id="debug-toggle">
+            <i class="fas fa-chevron-up"></i>
+        </button>
     </div>
+    <div class="debug-content">
+        <div class="status-item">
+            <span class="status-label">CSS Status:</span>
+            <span class="status-value" id="css-status">Loading...</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">API Status:</span>
+            <span class="status-value" id="api-status">Not tested</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Connection:</span>
+            <span class="status-value">WebSocket Active</span>
+        </div>
+    </div>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const bodyColor = window.getComputedStyle(document.body).backgroundColor;
-                document.getElementById('css-status').textContent = 
-                    `CSS: ${bodyColor === 'rgb(26, 26, 26)' ? 'Not loaded' : 'Loaded'}`;
-                
-                fetch('/ask', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'question=test'
-                })
-                .then(response => {
-                    document.getElementById('api-status').textContent = 
-                        `API: ${response.ok ? 'Working' : 'Error ' + response.status}`;
-                })
-                .catch(err => {
-                    document.getElementById('api-status').textContent = 'API: Connection failed';
-                });
-                
-                // Auto-scroll to bottom of chat
-                const chatMessages = document.getElementById('chat-messages');
-                if (chatMessages) {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
-            }, 500);
-        });
-    </script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const bodyColor = window.getComputedStyle(document.body).backgroundColor;
+            document.getElementById('css-status').textContent =
+                    bodyColor === 'rgb(18, 18, 18)' ? 'Not loaded' : 'Loaded successfully';
+
+            fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'question=test'
+            })
+                    .then(response => {
+                        document.getElementById('api-status').textContent =
+                                response.ok ? 'Operational' : `Error ${response.status}`;
+                    })
+                    .catch(err => {
+                        document.getElementById('api-status').textContent = 'Connection failed';
+                    });
+
+            // Auto-scroll to bottom of chat
+            const chatMessages = document.getElementById('chat-messages');
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Debug panel toggle
+            const debugToggle = document.getElementById('debug-toggle');
+            const debugPanel = document.getElementById('debug');
+            debugToggle.addEventListener('click', () => {
+                debugPanel.classList.toggle('collapsed');
+                debugToggle.querySelector('i').classList.toggle('fa-chevron-up');
+                debugToggle.querySelector('i').classList.toggle('fa-chevron-down');
+            });
+        }, 500);
+    });
+</script>
 </body>
 </html>
