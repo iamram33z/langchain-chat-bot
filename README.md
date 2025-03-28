@@ -42,7 +42,6 @@ The Fintech AI Assistant is a sophisticated RAG (Retrieval-Augmented Generation)
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/iamram33z/langchain-chat-bot.git
-   cd fintech-ai-assistant
    ```
 
 2. **Create a virtual environment**:
