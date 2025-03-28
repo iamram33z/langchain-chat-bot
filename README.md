@@ -87,7 +87,6 @@ The application will be available at `http://localhost:8000`
 fintech-ai-assistant/
 ├── chatbot/
 │   ├── app/
-│   │   ├── __init__.py
 │   │   ├── main.py              # FastAPI application
 │   │   ├── rag_pipeline.py      # RAG pipeline implementation
 │   │   ├── static/              # Static files (CSS, images)
@@ -95,7 +94,7 @@ fintech-ai-assistant/
 │   │   │   └── style.css
 │   │   ├── templates/           # HTML templates
 │   │   │   └── index.html
-│   │   └── data/                # Document storage
+│   ├── data/                    # Document storage
 │   │       └── fintech_guide.pdf
 │   └── notebooks/               # Jupyter notebooks for experimentation
 ├── .env                         # Environment variables
