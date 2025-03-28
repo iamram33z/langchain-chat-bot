@@ -3,21 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistant | Professional Chat Interface</title>
+    <title>Fintech AI Assistant</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 <body>
 <div class="main-container">
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
     <div class="app-container">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
                     <div class="logo-circle">
-                        <i class="fas fa-robot" style="color: #A5D63F; font-size: 24px;"></i>
+                        <i class="fas fa-chart-line"></i>
                     </div>
-                    <span class="logo-text">AI Assistant</span>
+                    <span class="logo-text">Fintech AI</span>
                 </div>
                 <div class="status-indicator">
                     <span class="status-dot"></span>
@@ -26,27 +31,30 @@
             </div>
             <div class="conversation-history">
                 <div class="section-title">Recent Chats</div>
-                <!-- Would be populated with conversation history -->
+                <div class="history-item">Latest "cryptocurrency" regulations</div>
+                <div class="history-item">Explain blockchain technology</div>
+                <div class="history-item">Stock market trends</div>
             </div>
             <div class="user-profile">
                 <div class="avatar-small">
                     <i class="fas fa-user"></i>
                 </div>
                 <div class="user-info">
-                    <span class="username">User</span>
+                    <span class="username">Financial Analyst</span>
+                    <span class="user-role">Professional Plan</span>
                 </div>
             </div>
         </div>
 
         <div class="chat-container">
             <div class="background-logo">
-                <i class="fas fa-robot"></i>
+                <i class="fas fa-chart-line"></i>
             </div>
             <div class="chat-header">
                 <div class="chat-title-container">
-                    <h2>AI Assistant</h2>
-                    <div class="typing-indicator" id="typing-indicator" style="display: none;">
-                        <span>AI is typing</span>
+                    <h2>Fintech AI Assistant</h2>
+                    <div class="typing-indicator" id="typing-indicator">
+                        <span>AI is analyzing</span>
                         <div class="typing-dots">
                             <span></span>
                             <span></span>
@@ -83,7 +91,7 @@
                             <span class="message-time">{{ message.time }}</span>
                         </div>
                         <div class="message-content">
-                            {{ message.bot }}
+                            {{ message.bot | safe }}
                         </div>
                     </div>
                 </div>
@@ -92,14 +100,16 @@
 
             <div class="chat-input-container">
                 <form method="post" action="/ask" class="message-form" id="chat-form">
-                    <input type="text" name="question" class="message-input" placeholder="Type your message..."
-                           required>
+                    <input type="text" name="question" class="message-input"
+                           placeholder="Ask about finance or search news (put terms in quotes)" required>
                     <button type="submit" class="send-button">
                         <i class="fas fa-paper-plane"></i>
                     </button>
+                    <input type="hidden" name="chat_history" value="{{ chat_history | tojson | safe }}">
                 </form>
                 <div class="input-footer">
-                    <span class="disclaimer-text">AI Assistant may produce inaccurate information. Consider verifying important details.</span>
+                    <span class="disclaimer-text">Tip: Search financial news by putting terms in quotes like <span
+                            class="keyword-highlight">"bitcoin"</span></span>
                 </div>
             </div>
         </div>
@@ -114,15 +124,56 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Handle form submission to show typing indicator
+        // Handle form submission
         const chatForm = document.getElementById('chat-form');
         const typingIndicator = document.getElementById('typing-indicator');
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const sidebar = document.getElementById('sidebar');
 
         if (chatForm) {
             chatForm.addEventListener('submit', () => {
-                typingIndicator.style.display = 'flex';
+                typingIndicator.classList.add('visible');
             });
         }
+
+        // Mobile menu toggle
+        if (mobileMenuToggle && sidebar) {
+            mobileMenuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+        }
+
+        // Highlight keywords in messages
+        const messageContents = document.querySelectorAll('.message-content');
+        messageContents.forEach(content => {
+            content.innerHTML = content.innerHTML.replace(
+                    /"([^"]*)"/g,
+                    '<span class="keyword-highlight">$1</span>'
+            );
+
+            // Format news articles
+            const newsMarkers = content.innerHTML.match(/Title: (.*?)\nSource: (.*?)\nDate: (.*?)\nSummary: (.*?)(\nURL: (.*?))?(\n\n|$)/g);
+            if (newsMarkers) {
+                newsMarkers.forEach(marker => {
+                    const [, title, source, date, summary, , url] = marker.match(/Title: (.*?)\nSource: (.*?)\nDate: (.*?)\nSummary: (.*?)(\nURL: (.*?))?(\n\n|$)/) || [];
+                    if (title) {
+                        const newsHtml = `
+                            <div class="news-article">
+                                <div class="news-title">
+                                    <i class="fas fa-newspaper"></i>
+                                    ${title}
+                                </div>
+                                <div class="news-source">${source}</div>
+                                <div class="news-date">${date}</div>
+                                <div class="news-summary">${summary}</div>
+                                ${url ? `<a href="${url}" class="news-link" target="_blank">Read more <i class="fas fa-external-link-alt"></i></a>` : ''}
+                            </div>
+                        `;
+                        content.innerHTML = content.innerHTML.replace(marker, newsHtml);
+                    }
+                });
+            }
+        });
     });
 </script>
 </body>
