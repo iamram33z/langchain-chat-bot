@@ -27,7 +27,6 @@ The Fintech AI Assistant is a sophisticated RAG (Retrieval-Augmented Generation)
 
 ### Frontend
 - **HTML5/CSS3**: Modern responsive design
-- **JavaScript**: For interactive elements
 - **Jinja2 Templates**: Server-side rendering
 
 ## Installation
