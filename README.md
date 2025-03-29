@@ -82,7 +82,7 @@ The application will be available at `http://localhost:8000`
 ## Project Structure
 
 ```
-fintech-ai-assistant/
+langchain-chat-bot/
 ├── chatbot/
 │   ├── app/
 │   │   ├── main.py              # FastAPI application
